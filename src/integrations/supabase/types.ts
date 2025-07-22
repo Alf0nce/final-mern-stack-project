@@ -14,7 +14,252 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      loan_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          loan_id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          receipt_number: string | null
+          recorded_by: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          loan_id: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          receipt_number?: string | null
+          recorded_by: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          loan_id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          receipt_number?: string | null
+          recorded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_payments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loans: {
+        Row: {
+          amount: number
+          amount_paid: number | null
+          application_date: string
+          approval_date: string | null
+          approved_by: string | null
+          balance: number | null
+          created_at: string
+          disbursement_date: string | null
+          due_date: string | null
+          duration_months: number
+          id: string
+          interest_rate: number
+          loan_number: string
+          member_id: string
+          purpose: string
+          status: string
+          total_amount_due: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          amount_paid?: number | null
+          application_date?: string
+          approval_date?: string | null
+          approved_by?: string | null
+          balance?: number | null
+          created_at?: string
+          disbursement_date?: string | null
+          due_date?: string | null
+          duration_months: number
+          id?: string
+          interest_rate?: number
+          loan_number: string
+          member_id: string
+          purpose: string
+          status?: string
+          total_amount_due?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          amount_paid?: number | null
+          application_date?: string
+          approval_date?: string | null
+          approved_by?: string | null
+          balance?: number | null
+          created_at?: string
+          disbursement_date?: string | null
+          due_date?: string | null
+          duration_months?: number
+          id?: string
+          interest_rate?: number
+          loan_number?: string
+          member_id?: string
+          purpose?: string
+          status?: string
+          total_amount_due?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loans_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      members: {
+        Row: {
+          address: string | null
+          created_at: string
+          date_joined: string
+          full_name: string
+          id: string
+          member_number: string
+          monthly_savings_target: number | null
+          national_id: string | null
+          phone: string | null
+          status: string
+          total_loans: number | null
+          total_savings: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          date_joined?: string
+          full_name: string
+          id?: string
+          member_number: string
+          monthly_savings_target?: number | null
+          national_id?: string | null
+          phone?: string | null
+          status?: string
+          total_loans?: number | null
+          total_savings?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          date_joined?: string
+          full_name?: string
+          id?: string
+          member_number?: string
+          monthly_savings_target?: number | null
+          national_id?: string | null
+          phone?: string | null
+          status?: string
+          total_loans?: number | null
+          total_savings?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          created_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      savings: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          created_at: string
+          description: string | null
+          id: string
+          member_id: string
+          receipt_number: string | null
+          recorded_by: string
+          transaction_date: string
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          member_id: string
+          receipt_number?: string | null
+          recorded_by: string
+          transaction_date?: string
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          member_id?: string
+          receipt_number?: string | null
+          recorded_by?: string
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
