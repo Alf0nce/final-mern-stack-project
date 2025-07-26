@@ -58,20 +58,9 @@ const AuthPage = () => {
 
       if (error) throw error;
 
-      // Create profile after successful signup
+      // Profile will be created automatically by database trigger
+      // Create member record after successful signup (member_number will be auto-generated)
       if (data.user) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert({
-            user_id: data.user.id,
-            full_name: fullName,
-            phone,
-            role: "member",
-          });
-
-        if (profileError) throw profileError;
-
-        // Create member record (member_number will be auto-generated)
         const { error: memberError } = await supabase
           .from("members")
           .insert({
