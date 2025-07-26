@@ -294,10 +294,30 @@ const MembersSection = () => {
               </div>
 
               <div className="flex space-x-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => {
+                    toast({
+                      title: "View Details",
+                      description: `Viewing details for ${member.full_name}`,
+                    });
+                  }}
+                >
                   View Details
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => {
+                    toast({
+                      title: "Edit Member",
+                      description: `Editing ${member.full_name}`,
+                    });
+                  }}
+                >
                   Edit
                 </Button>
               </div>
