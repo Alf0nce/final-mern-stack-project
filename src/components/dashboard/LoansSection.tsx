@@ -118,7 +118,12 @@ const LoansSection = () => {
             Manage loan applications, approvals, and repayments
           </p>
         </div>
-        <Button>
+        <Button onClick={() => {
+          toast({
+            title: "New Loan",
+            description: "Loan application form will be implemented soon",
+          });
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           New Loan
         </Button>
@@ -255,7 +260,12 @@ const LoansSection = () => {
             {searchTerm ? "No loans found matching your search." : "No loans applied yet."}
           </p>
           {!searchTerm && (
-            <Button className="mt-4">
+            <Button className="mt-4" onClick={() => {
+              toast({
+                title: "Create First Loan",
+                description: "Loan application form will be implemented soon",
+              });
+            }}>
               <Plus className="mr-2 h-4 w-4" />
               Create First Loan
             </Button>

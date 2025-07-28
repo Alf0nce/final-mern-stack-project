@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { Users, DollarSign, PiggyBank, TrendingUp } from "lucide-react";
 
 interface DashboardStats {
@@ -18,6 +19,7 @@ const DashboardOverview = () => {
     totalLoanAmount: 0,
   });
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchStats();
@@ -206,15 +208,39 @@ const DashboardOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+              <div 
+                className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => {
+                  toast({
+                    title: "Record Savings Deposit",
+                    description: "Savings transaction form will be implemented soon",
+                  });
+                }}
+              >
                 <p className="text-sm font-medium">Record new savings deposit</p>
                 <p className="text-xs text-muted-foreground">Add member savings transaction</p>
               </div>
-              <div className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+              <div 
+                className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => {
+                  toast({
+                    title: "Process Loan Payment",
+                    description: "Loan payment form will be implemented soon",
+                  });
+                }}
+              >
                 <p className="text-sm font-medium">Process loan payment</p>
                 <p className="text-xs text-muted-foreground">Record loan repayment</p>
               </div>
-              <div className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+              <div 
+                className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => {
+                  toast({
+                    title: "Generate Reports",
+                    description: "Report generation feature will be implemented soon",
+                  });
+                }}
+              >
                 <p className="text-sm font-medium">Generate reports</p>
                 <p className="text-xs text-muted-foreground">Export financial reports</p>
               </div>

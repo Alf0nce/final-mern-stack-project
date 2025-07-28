@@ -116,7 +116,12 @@ const SavingsSection = () => {
             Track member savings deposits and withdrawals
           </p>
         </div>
-        <Button>
+        <Button onClick={() => {
+          toast({
+            title: "New Transaction",
+            description: "Transaction form will be implemented soon",
+          });
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           New Transaction
         </Button>
@@ -236,7 +241,12 @@ const SavingsSection = () => {
             {searchTerm ? "No transactions found matching your search." : "No savings transactions recorded yet."}
           </p>
           {!searchTerm && (
-            <Button className="mt-4">
+            <Button className="mt-4" onClick={() => {
+              toast({
+                title: "Record First Transaction",
+                description: "Transaction form will be implemented soon",
+              });
+            }}>
               <Plus className="mr-2 h-4 w-4" />
               Record First Transaction
             </Button>
