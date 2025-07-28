@@ -144,7 +144,7 @@ const Dashboard = ({ user }: DashboardProps) => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-card border-b p-4 lg:p-6">
           <div className="flex items-center space-x-3 ml-12 lg:ml-0">
-            <img src={unityLogo} alt="Unity Logo" className="h-8 w-8" />
+            <img src={unityLogo} alt="Community Logo" className="h-8 w-8" />
             <h1 className="text-2xl font-bold">
               Alfo Self Help Group
             </h1>
