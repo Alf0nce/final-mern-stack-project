@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { User } from "@supabase/supabase-js";
+import unityLogo from "@/assets/unity-logo.png";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -142,9 +143,12 @@ const Dashboard = ({ user }: DashboardProps) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-card border-b p-4 lg:p-6">
-          <h1 className="text-2xl font-bold ml-12 lg:ml-0">
-            {navigation.find(item => item.key === activeSection)?.label || "Dashboard"}
-          </h1>
+          <div className="flex items-center space-x-3 ml-12 lg:ml-0">
+            <img src={unityLogo} alt="Unity Logo" className="h-8 w-8" />
+            <h1 className="text-2xl font-bold">
+              Alfo Self Help Group
+            </h1>
+          </div>
         </header>
         
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
