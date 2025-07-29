@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Calendar, DollarSign, Clock, User } from "lucide-react";
+import { LoanApplicationForm } from "@/components/forms/LoanApplicationForm";
 
 interface Loan {
   id: string;
@@ -30,6 +31,7 @@ const LoansSection = () => {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showLoanForm, setShowLoanForm] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -118,12 +120,7 @@ const LoansSection = () => {
             Manage loan applications, approvals, and repayments
           </p>
         </div>
-        <Button onClick={() => {
-          toast({
-            title: "New Loan",
-            description: "Loan application form will be implemented soon",
-          });
-        }}>
+        <Button onClick={() => setShowLoanForm(true)}>
           <Plus className="mr-2 h-4 w-4" />
           New Loan
         </Button>
@@ -260,18 +257,19 @@ const LoansSection = () => {
             {searchTerm ? "No loans found matching your search." : "No loans applied yet."}
           </p>
           {!searchTerm && (
-            <Button className="mt-4" onClick={() => {
-              toast({
-                title: "Create First Loan",
-                description: "Loan application form will be implemented soon",
-              });
-            }}>
+            <Button className="mt-4" onClick={() => setShowLoanForm(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Create First Loan
             </Button>
           )}
         </div>
       )}
+
+      <LoanApplicationForm
+        open={showLoanForm}
+        onOpenChange={setShowLoanForm}
+        onSuccess={fetchLoans}
+      />
     </div>
   );
 };

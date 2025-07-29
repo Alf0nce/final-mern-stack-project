@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Calendar, TrendingUp, TrendingDown, User, Receipt } from "lucide-react";
+import { SavingsTransactionForm } from "@/components/forms/SavingsTransactionForm";
 
 interface SavingsTransaction {
   id: string;
@@ -26,6 +27,7 @@ const SavingsSection = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [totalSavings, setTotalSavings] = useState(0);
+  const [showTransactionForm, setShowTransactionForm] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -116,12 +118,7 @@ const SavingsSection = () => {
             Track member savings deposits and withdrawals
           </p>
         </div>
-        <Button onClick={() => {
-          toast({
-            title: "New Transaction",
-            description: "Transaction form will be implemented soon",
-          });
-        }}>
+        <Button onClick={() => setShowTransactionForm(true)}>
           <Plus className="mr-2 h-4 w-4" />
           New Transaction
         </Button>
@@ -241,18 +238,22 @@ const SavingsSection = () => {
             {searchTerm ? "No transactions found matching your search." : "No savings transactions recorded yet."}
           </p>
           {!searchTerm && (
-            <Button className="mt-4" onClick={() => {
-              toast({
-                title: "Record First Transaction",
-                description: "Transaction form will be implemented soon",
-              });
-            }}>
+            <Button className="mt-4" onClick={() => setShowTransactionForm(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Record First Transaction
             </Button>
           )}
         </div>
       )}
+
+      <SavingsTransactionForm
+        open={showTransactionForm}
+        onOpenChange={setShowTransactionForm}
+        onSuccess={() => {
+          fetchTransactions();
+          fetchTotalSavings();
+        }}
+      />
     </div>
   );
 };
