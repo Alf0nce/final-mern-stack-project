@@ -116,12 +116,29 @@ const LoansSection = () => {
     if (!selectedLoan) return;
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to approve loans",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from("loans")
-        .update({ status: "approved" })
+        .update({ 
+          status: "approved",
+          approved_by: user.id
+        })
         .eq("id", selectedLoan.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Loan approval error:', error);
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -132,9 +149,10 @@ const LoansSection = () => {
       setSelectedLoan(null);
       fetchLoans();
     } catch (error: any) {
+      console.error('Loan approval error:', error);
       toast({
         title: "Error",
-        description: "Failed to approve loan",
+        description: error.message || "Failed to approve loan",
         variant: "destructive",
       });
     }
