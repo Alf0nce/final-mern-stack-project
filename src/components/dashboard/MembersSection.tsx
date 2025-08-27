@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Phone, MapPin, Calendar } from "lucide-react";
+import { Plus, Search, Phone, MapPin, Calendar, Eye, Edit } from "lucide-react";
 
 interface Member {
   id: string;
@@ -27,6 +27,15 @@ const MembersSection = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [editMember, setEditMember] = useState({
+    full_name: "",
+    phone: "",
+    address: "",
+    monthly_savings_target: 0,
+  });
   const [newMember, setNewMember] = useState({
     full_name: "",
     phone: "",
@@ -109,6 +118,50 @@ const MembersSection = () => {
       toast({
         title: "Error",
         description: "Failed to add member",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewMember = (member: Member) => {
+    setSelectedMember(member);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditMember = (member: Member) => {
+    setSelectedMember(member);
+    setEditMember({
+      full_name: member.full_name,
+      phone: member.phone || "",
+      address: member.address || "",
+      monthly_savings_target: member.monthly_savings_target || 0,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateMember = async () => {
+    if (!selectedMember) return;
+
+    try {
+      const { error } = await supabase
+        .from("members")
+        .update(editMember)
+        .eq("id", selectedMember.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Member updated successfully",
+      });
+
+      setIsEditDialogOpen(false);
+      setSelectedMember(null);
+      fetchMembers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to update member",
         variant: "destructive",
       });
     }
@@ -298,26 +351,18 @@ const MembersSection = () => {
                   variant="outline" 
                   size="sm" 
                   className="flex-1"
-                  onClick={() => {
-                    toast({
-                      title: "View Details",
-                      description: `Viewing details for ${member.full_name}`,
-                    });
-                  }}
+                  onClick={() => handleViewMember(member)}
                 >
+                  <Eye className="mr-1 h-3 w-3" />
                   View Details
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="flex-1"
-                  onClick={() => {
-                    toast({
-                      title: "Edit Member",
-                      description: `Editing ${member.full_name}`,
-                    });
-                  }}
+                  onClick={() => handleEditMember(member)}
                 >
+                  <Edit className="mr-1 h-3 w-3" />
                   Edit
                 </Button>
               </div>
@@ -343,6 +388,120 @@ const MembersSection = () => {
           )}
         </div>
       )}
+
+      {/* View Member Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Member Details</DialogTitle>
+          </DialogHeader>
+          {selectedMember && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Member Number:</span>
+                <span className="font-mono">{selectedMember.member_number}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Full Name:</span>
+                <span>{selectedMember.full_name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Phone:</span>
+                <span>{selectedMember.phone || "N/A"}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Address:</span>
+                <span className="text-right">{selectedMember.address || "N/A"}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Date Joined:</span>
+                <span>{new Date(selectedMember.date_joined).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Status:</span>
+                <Badge
+                  variant="secondary"
+                  className={`${getStatusColor(selectedMember.status)} text-white`}
+                >
+                  {selectedMember.status}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Monthly Target:</span>
+                <span>{formatCurrency(selectedMember.monthly_savings_target || 0)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Total Savings:</span>
+                <span className="text-green-600 font-semibold">
+                  {formatCurrency(selectedMember.total_savings)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Total Loans:</span>
+                <span className="text-blue-600 font-semibold">
+                  {formatCurrency(selectedMember.total_loans)}
+                </span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Member Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Member</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit_full_name">Full Name</Label>
+              <Input
+                id="edit_full_name"
+                value={editMember.full_name}
+                onChange={(e) => setEditMember({ ...editMember, full_name: e.target.value })}
+                placeholder="Enter full name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_phone">Phone Number</Label>
+              <Input
+                id="edit_phone"
+                value={editMember.phone}
+                onChange={(e) => setEditMember({ ...editMember, phone: e.target.value })}
+                placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_address">Address</Label>
+              <Input
+                id="edit_address"
+                value={editMember.address}
+                onChange={(e) => setEditMember({ ...editMember, address: e.target.value })}
+                placeholder="Enter address"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_monthly_savings_target">Monthly Savings Target (KES)</Label>
+              <Input
+                id="edit_monthly_savings_target"
+                type="number"
+                value={editMember.monthly_savings_target}
+                onChange={(e) => setEditMember({ ...editMember, monthly_savings_target: Number(e.target.value) })}
+                placeholder="Enter monthly savings target"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateMember}>
+                Update Member
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
