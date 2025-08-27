@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Calendar, DollarSign, Clock, User } from "lucide-react";
+import { Plus, Search, Calendar, DollarSign, Clock, User, Eye, Check, CreditCard } from "lucide-react";
 import { LoanApplicationForm } from "@/components/forms/LoanApplicationForm";
 
 interface Loan {
@@ -32,6 +34,11 @@ const LoansSection = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showLoanForm, setShowLoanForm] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -93,6 +100,107 @@ const LoansSection = () => {
 
   const getStatusLabel = (status: string) => {
     return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
+  const handleViewDetails = (loan: Loan) => {
+    setSelectedLoan(loan);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleApproveLoan = async (loan: Loan) => {
+    setSelectedLoan(loan);
+    setIsApproveDialogOpen(true);
+  };
+
+  const confirmApproveLoan = async () => {
+    if (!selectedLoan) return;
+
+    try {
+      const { error } = await supabase
+        .from("loans")
+        .update({ status: "approved" })
+        .eq("id", selectedLoan.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Loan approved successfully",
+      });
+
+      setIsApproveDialogOpen(false);
+      setSelectedLoan(null);
+      fetchLoans();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to approve loan",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRecordPayment = (loan: Loan) => {
+    setSelectedLoan(loan);
+    setPaymentAmount("");
+    setIsPaymentDialogOpen(true);
+  };
+
+  const confirmPayment = async () => {
+    if (!selectedLoan || !paymentAmount) return;
+
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid payment amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to record payments",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("loan_payments")
+        .insert([
+          {
+            loan_id: selectedLoan.id,
+            amount: amount,
+            recorded_by: user.id,
+            payment_method: "cash",
+            notes: `Payment recorded for loan ${selectedLoan.loan_number}`,
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Payment recorded successfully",
+      });
+
+      setIsPaymentDialogOpen(false);
+      setSelectedLoan(null);
+      setPaymentAmount("");
+      fetchLoans();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to record payment",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -232,16 +340,32 @@ const LoansSection = () => {
               </div>
 
               <div className="flex space-x-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => handleViewDetails(loan)}
+                >
+                  <Eye className="mr-1 h-3 w-3" />
                   View Details
                 </Button>
                 {loan.status === "pending" && (
-                  <Button size="sm" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleApproveLoan(loan)}
+                  >
+                    <Check className="mr-1 h-3 w-3" />
                     Approve
                   </Button>
                 )}
                 {(loan.status === "approved" || loan.status === "disbursed") && (
-                  <Button size="sm" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleRecordPayment(loan)}
+                  >
+                    <CreditCard className="mr-1 h-3 w-3" />
                     Record Payment
                   </Button>
                 )}
@@ -270,6 +394,200 @@ const LoansSection = () => {
         onOpenChange={setShowLoanForm}
         onSuccess={fetchLoans}
       />
+
+      {/* View Loan Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Loan Details</DialogTitle>
+          </DialogHeader>
+          {selectedLoan && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="font-semibold">Loan Number</Label>
+                  <p className="font-mono">{selectedLoan.loan_number}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Status</Label>
+                  <div>
+                    <Badge
+                      variant="secondary"
+                      className={`${getStatusColor(selectedLoan.status)} text-white`}
+                    >
+                      {getStatusLabel(selectedLoan.status)}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="font-semibold">Borrower</Label>
+                  <p>{selectedLoan.members.full_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    ({selectedLoan.members.member_number})
+                  </p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Purpose</Label>
+                  <p>{selectedLoan.purpose}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="font-semibold">Loan Amount</Label>
+                  <p className="text-blue-600 font-semibold">
+                    {formatCurrency(selectedLoan.amount)}
+                  </p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Interest Rate</Label>
+                  <p>{selectedLoan.interest_rate}%</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="font-semibold">Duration</Label>
+                  <p>{selectedLoan.duration_months} months</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Total Amount Due</Label>
+                  <p className="text-orange-600 font-semibold">
+                    {formatCurrency(selectedLoan.total_amount_due)}
+                  </p>
+                </div>
+              </div>
+
+              {selectedLoan.status !== "pending" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="font-semibold">Amount Paid</Label>
+                    <p className="text-green-600 font-semibold">
+                      {formatCurrency(selectedLoan.amount_paid)}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Outstanding Balance</Label>
+                    <p className="text-red-600 font-semibold">
+                      {formatCurrency(selectedLoan.balance)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="font-semibold">Application Date</Label>
+                  <p>{new Date(selectedLoan.application_date).toLocaleDateString()}</p>
+                </div>
+                {selectedLoan.due_date && (
+                  <div>
+                    <Label className="font-semibold">Due Date</Label>
+                    <p>{new Date(selectedLoan.due_date).toLocaleDateString()}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Approve Loan Dialog */}
+      <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Approve Loan</DialogTitle>
+          </DialogHeader>
+          {selectedLoan && (
+            <div className="space-y-4">
+              <p>
+                Are you sure you want to approve the loan for{" "}
+                <strong>{selectedLoan.members.full_name}</strong>?
+              </p>
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span>Loan Number:</span>
+                  <span className="font-mono">{selectedLoan.loan_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Amount:</span>
+                  <span className="font-semibold text-blue-600">
+                    {formatCurrency(selectedLoan.amount)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Amount Due:</span>
+                  <span className="font-semibold text-orange-600">
+                    {formatCurrency(selectedLoan.total_amount_due || selectedLoan.amount * (1 + selectedLoan.interest_rate / 100))}
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={confirmApproveLoan}>
+                  Approve Loan
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Record Payment Dialog */}
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+          </DialogHeader>
+          {selectedLoan && (
+            <div className="space-y-4">
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span>Loan Number:</span>
+                  <span className="font-mono">{selectedLoan.loan_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Borrower:</span>
+                  <span>{selectedLoan.members.full_name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Outstanding Balance:</span>
+                  <span className="font-semibold text-red-600">
+                    {formatCurrency(selectedLoan.balance)}
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="paymentAmount">Payment Amount (KES)</Label>
+                <Input
+                  id="paymentAmount"
+                  type="number"
+                  placeholder="Enter payment amount"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={confirmPayment} disabled={!paymentAmount}>
+                  Record Payment
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
