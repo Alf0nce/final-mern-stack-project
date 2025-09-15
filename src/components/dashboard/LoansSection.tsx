@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Calendar, DollarSign, Clock, User, Eye, Check, CreditCard } from "lucide-react";
+import { Plus, Search, Calendar, DollarSign, Clock, User, Eye, Check, TrendingDown } from "lucide-react";
 import { LoanApplicationForm } from "@/components/forms/LoanApplicationForm";
 
 interface Loan {
@@ -383,7 +383,7 @@ const LoansSection = () => {
                     className="flex-1"
                     onClick={() => handleRecordPayment(loan)}
                   >
-                    <CreditCard className="mr-1 h-3 w-3" />
+                    <TrendingDown className="mr-1 h-3 w-3" />
                     Record Payment
                   </Button>
                 )}
