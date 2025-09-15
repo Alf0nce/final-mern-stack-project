@@ -33,7 +33,8 @@ const InterestSection = () => {
 
   const fetchInterestData = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch approved loans with their payments
+      const { data: loansData, error: loansError } = await supabase
         .from("loans")
         .select(`
           id,
@@ -42,30 +43,45 @@ const InterestSection = () => {
           interest_rate,
           total_amount_due,
           amount_paid,
+          balance,
           status,
           approval_date,
           members!inner(full_name)
         `)
         .eq("status", "approved");
 
-      if (error) throw error;
+      if (loansError) throw loansError;
 
-      const interestData = data.map((loan: any) => {
-        const interestAmount = loan.total_amount_due - loan.amount;
-        const interestReceived = Math.min(
-          Math.max(loan.amount_paid - loan.amount, 0),
-          interestAmount
-        );
+      // Fetch all loan payments for approved loans
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from("loan_payments")
+        .select("loan_id, amount")
+        .in("loan_id", loansData.map(loan => loan.id));
 
+      if (paymentsError) throw paymentsError;
+
+      const interestData = loansData.map((loan: any) => {
+        const loanPayments = paymentsData.filter((payment: any) => payment.loan_id === loan.id);
+        const totalPayments = loanPayments.reduce((sum: number, payment: any) => sum + payment.amount, 0);
+        
+        // Calculate interest amounts
+        const principalAmount = loan.amount;
+        const interestAmount = loan.total_amount_due - principalAmount;
+        
+        // Calculate how much interest has been received
+        // Interest is collected proportionally with payments
+        const paymentRatio = totalPayments / loan.total_amount_due;
+        const interestReceived = Math.min(interestAmount * paymentRatio, interestAmount);
+        
         return {
           id: loan.id,
           loan_number: loan.loan_number,
           member_name: loan.members.full_name,
-          amount: loan.amount,
+          amount: principalAmount,
           interest_rate: loan.interest_rate,
           total_amount_due: loan.total_amount_due,
           interest_amount: interestAmount,
-          amount_paid: loan.amount_paid,
+          amount_paid: totalPayments,
           interest_received: interestReceived,
           status: loan.status,
           approval_date: loan.approval_date,
@@ -74,7 +90,7 @@ const InterestSection = () => {
 
       setLoans(interestData);
 
-      // Calculate totals
+      // Calculate totals from approved loans only
       const totalEarned = interestData.reduce((sum, loan) => sum + loan.interest_received, 0);
       const totalPending = interestData.reduce((sum, loan) => sum + (loan.interest_amount - loan.interest_received), 0);
       
