@@ -189,7 +189,8 @@ const LoansSection = () => {
         return;
       }
 
-      const { error } = await supabase
+      // First, record the payment
+      const { error: paymentError } = await supabase
         .from("loan_payments")
         .insert([
           {
@@ -201,11 +202,36 @@ const LoansSection = () => {
           }
         ]);
 
-      if (error) throw error;
+      if (paymentError) throw paymentError;
+
+      // Calculate new totals
+      const newAmountPaid = (selectedLoan.amount_paid || 0) + amount;
+      const newBalance = selectedLoan.total_amount_due - newAmountPaid;
+      const isFullyPaid = newBalance <= 0;
+
+      // Update the loan with new payment amounts and status
+      const updateData: any = {
+        amount_paid: newAmountPaid,
+        balance: Math.max(newBalance, 0)
+      };
+
+      // If loan is fully paid, mark as completed
+      if (isFullyPaid) {
+        updateData.status = "completed";
+      }
+
+      const { error: loanUpdateError } = await supabase
+        .from("loans")
+        .update(updateData)
+        .eq("id", selectedLoan.id);
+
+      if (loanUpdateError) throw loanUpdateError;
 
       toast({
         title: "Success",
-        description: "Payment recorded successfully",
+        description: isFullyPaid 
+          ? "Payment recorded successfully. Loan is now fully paid!" 
+          : "Payment recorded successfully",
       });
 
       setIsPaymentDialogOpen(false);
