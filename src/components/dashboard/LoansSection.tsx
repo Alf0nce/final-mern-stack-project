@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Calendar, DollarSign, Clock, User, Eye, Check, TrendingDown } from "lucide-react";
+import { Plus, Search, Calendar, DollarSign, Clock, User, Eye, Check, TrendingDown, CheckCircle } from "lucide-react";
 import { LoanApplicationForm } from "@/components/forms/LoanApplicationForm";
 
 interface Loan {
@@ -90,7 +90,7 @@ const LoansSection = () => {
       case "disbursed":
         return "bg-green-500";
       case "completed":
-        return "bg-gray-500";
+        return "bg-green-600";
       case "defaulted":
         return "bg-red-500";
       default:
@@ -294,8 +294,11 @@ const LoansSection = () => {
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg font-mono">
+                  <CardTitle className="text-lg font-mono flex items-center gap-2">
                     {loan.loan_number}
+                    {loan.status === "completed" && (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    )}
                   </CardTitle>
                   <CardDescription>
                     {loan.purpose}
