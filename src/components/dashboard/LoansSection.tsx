@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Calendar, DollarSign, Clock, User, Eye, Check, TrendingDown, CheckCircle, CreditCard, Banknote, Smartphone } from "lucide-react";
+import { Plus, Search, Calendar, DollarSign, Clock, User, Eye, Check, TrendingDown, CheckCircle, CreditCard, Banknote, Smartphone, HandCoins } from "lucide-react";
 import { LoanApplicationForm } from "@/components/forms/LoanApplicationForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +38,7 @@ const LoansSection = () => {
   const [showLoanForm, setShowLoanForm] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [isDisburseDialogOpen, setIsDisburseDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -117,6 +118,11 @@ const LoansSection = () => {
     setIsApproveDialogOpen(true);
   };
 
+  const handleDisburseLoan = async (loan: Loan) => {
+    setSelectedLoan(loan);
+    setIsDisburseDialogOpen(true);
+  };
+
   const confirmApproveLoan = async () => {
     if (!selectedLoan) return;
 
@@ -147,7 +153,7 @@ const LoansSection = () => {
 
       toast({
         title: "Success",
-        description: "Loan approved successfully",
+        description: "Loan approved successfully. You can now disburse the funds.",
       });
 
       setIsApproveDialogOpen(false);
@@ -158,6 +164,52 @@ const LoansSection = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to approve loan",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const confirmDisburseLoan = async () => {
+    if (!selectedLoan) return;
+
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to disburse loans",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("loans")
+        .update({ 
+          status: "disbursed",
+          disbursement_date: new Date().toISOString().split('T')[0]
+        })
+        .eq("id", selectedLoan.id);
+
+      if (error) {
+        console.error('Loan disbursement error:', error);
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Loan disbursed successfully. Funds have been released to the borrower.",
+      });
+
+      setIsDisburseDialogOpen(false);
+      setSelectedLoan(null);
+      fetchLoans();
+    } catch (error: any) {
+      console.error('Loan disbursement error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to disburse loan",
         variant: "destructive",
       });
     }
@@ -424,7 +476,17 @@ const LoansSection = () => {
                     Approve
                   </Button>
                 )}
-                {(loan.status === "approved" || loan.status === "disbursed") && (
+                {loan.status === "approved" && (
+                  <Button 
+                    size="sm" 
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={() => handleDisburseLoan(loan)}
+                  >
+                    <HandCoins className="mr-1 h-3 w-3" />
+                    Disburse
+                  </Button>
+                )}
+                {loan.status === "disbursed" && (
                   <Button 
                     size="sm" 
                     className="flex-1"
@@ -596,6 +658,59 @@ const LoansSection = () => {
                 </Button>
                 <Button onClick={confirmApproveLoan}>
                   Approve Loan
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Disburse Loan Dialog */}
+      <Dialog open={isDisburseDialogOpen} onOpenChange={setIsDisburseDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HandCoins className="h-5 w-5" />
+              Disburse Loan
+            </DialogTitle>
+          </DialogHeader>
+          {selectedLoan && (
+            <div className="space-y-4">
+              <p>
+                Are you sure you want to disburse the loan to{" "}
+                <strong>{selectedLoan.members.full_name}</strong>?
+              </p>
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span>Loan Number:</span>
+                  <span className="font-mono">{selectedLoan.loan_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Amount to Disburse:</span>
+                  <span className="font-semibold text-green-600">
+                    {formatCurrency(selectedLoan.amount)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Repayment:</span>
+                  <span className="font-semibold text-orange-600">
+                    {formatCurrency(selectedLoan.total_amount_due || selectedLoan.amount * (1 + selectedLoan.interest_rate / 100))}
+                  </span>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg">
+                <strong>Note:</strong> Once disbursed, the loan status will change to "Disbursed" and the borrower can start making repayments.
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsDisburseDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={confirmDisburseLoan}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <HandCoins className="mr-2 h-4 w-4" />
+                  Disburse Funds
                 </Button>
               </div>
             </div>
