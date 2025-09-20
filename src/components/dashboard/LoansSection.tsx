@@ -7,8 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Calendar, DollarSign, Clock, User, Eye, Check, TrendingDown, CheckCircle } from "lucide-react";
+import { Plus, Search, Calendar, DollarSign, Clock, User, Eye, Check, TrendingDown, CheckCircle, CreditCard, Banknote, Smartphone } from "lucide-react";
 import { LoanApplicationForm } from "@/components/forms/LoanApplicationForm";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Loan {
   id: string;
@@ -39,6 +41,9 @@ const LoansSection = () => {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [receiptNumber, setReceiptNumber] = useState("");
+  const [paymentNotes, setPaymentNotes] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -158,9 +163,18 @@ const LoansSection = () => {
     }
   };
 
+  const generateReceiptNumber = () => {
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `RCP${timestamp}${random}`;
+  };
+
   const handleRecordPayment = (loan: Loan) => {
     setSelectedLoan(loan);
     setPaymentAmount("");
+    setPaymentMethod("cash");
+    setReceiptNumber(generateReceiptNumber());
+    setPaymentNotes("");
     setIsPaymentDialogOpen(true);
   };
 
@@ -197,8 +211,9 @@ const LoansSection = () => {
             loan_id: selectedLoan.id,
             amount: amount,
             recorded_by: user.id,
-            payment_method: "cash",
-            notes: `Payment recorded for loan ${selectedLoan.loan_number}`,
+            payment_method: paymentMethod,
+            receipt_number: receiptNumber,
+            notes: paymentNotes || `Payment recorded for loan ${selectedLoan.loan_number}`,
           }
         ]);
 
@@ -237,6 +252,9 @@ const LoansSection = () => {
       setIsPaymentDialogOpen(false);
       setSelectedLoan(null);
       setPaymentAmount("");
+      setPaymentMethod("cash");
+      setReceiptNumber("");
+      setPaymentNotes("");
       fetchLoans();
     } catch (error: any) {
       toast({
@@ -412,8 +430,8 @@ const LoansSection = () => {
                     className="flex-1"
                     onClick={() => handleRecordPayment(loan)}
                   >
-                    <TrendingDown className="mr-1 h-3 w-3" />
-                    Record Payment
+                    <CreditCard className="mr-1 h-3 w-3" />
+                    Process Payment
                   </Button>
                 )}
               </div>
@@ -585,14 +603,17 @@ const LoansSection = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Record Payment Dialog */}
+      {/* Process Payment Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Record Payment</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Process Loan Payment
+            </DialogTitle>
           </DialogHeader>
           {selectedLoan && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="bg-muted p-4 rounded-lg space-y-2">
                 <div className="flex justify-between">
                   <span>Loan Number:</span>
@@ -610,16 +631,73 @@ const LoansSection = () => {
                 </div>
               </div>
               
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="paymentAmount">Payment Amount (KES)</Label>
+                  <Input
+                    id="paymentAmount"
+                    type="number"
+                    placeholder="Enter amount"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="paymentMethod">Payment Method</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">
+                        <div className="flex items-center gap-2">
+                          <Banknote className="h-4 w-4" />
+                          Cash
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="bank_transfer">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-4 w-4" />
+                          Bank Transfer
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="mobile_money">
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="h-4 w-4" />
+                          Mobile Money
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="cheque">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          Cheque
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div>
-                <Label htmlFor="paymentAmount">Payment Amount (KES)</Label>
+                <Label htmlFor="receiptNumber">Receipt Number</Label>
                 <Input
-                  id="paymentAmount"
-                  type="number"
-                  placeholder="Enter payment amount"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  min="0"
-                  step="0.01"
+                  id="receiptNumber"
+                  placeholder="Auto-generated"
+                  value={receiptNumber}
+                  onChange={(e) => setReceiptNumber(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="paymentNotes">Notes (Optional)</Label>
+                <Textarea
+                  id="paymentNotes"
+                  placeholder="Add any payment notes..."
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
+                  rows={3}
                 />
               </div>
 
@@ -628,7 +706,7 @@ const LoansSection = () => {
                   Cancel
                 </Button>
                 <Button onClick={confirmPayment} disabled={!paymentAmount}>
-                  Record Payment
+                  Process Payment
                 </Button>
               </div>
             </div>
