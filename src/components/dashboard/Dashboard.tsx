@@ -9,6 +9,7 @@ import MembersSection from "./MembersSection";
 import LoansSection from "./LoansSection";
 import SavingsSection from "./SavingsSection";
 import InterestSection from "./InterestSection";
+import ReportsSection from "./ReportsSection";
 import { 
   Home, 
   Users, 
@@ -17,7 +18,8 @@ import {
   LogOut,
   Building2,
   Menu,
-  TrendingUp
+  TrendingUp,
+  FileText
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -25,7 +27,7 @@ interface DashboardProps {
   user: User;
 }
 
-type Section = "overview" | "members" | "loans" | "savings" | "interest";
+type Section = "overview" | "members" | "loans" | "savings" | "interest" | "reports";
 
 const Dashboard = ({ user }: DashboardProps) => {
   const [activeSection, setActiveSection] = useState<Section>("overview");
@@ -56,6 +58,7 @@ const Dashboard = ({ user }: DashboardProps) => {
     { key: "loans", label: "Loans", icon: DollarSign },
     { key: "savings", label: "Savings", icon: PiggyBank },
     { key: "interest", label: "Interest Received", icon: TrendingUp },
+    { key: "reports", label: "Reports", icon: FileText },
   ];
 
   const renderContent = () => {
@@ -70,6 +73,8 @@ const Dashboard = ({ user }: DashboardProps) => {
         return <SavingsSection />;
       case "interest":
         return <InterestSection />;
+      case "reports":
+        return <ReportsSection />;
       default:
         return <DashboardOverview />;
     }
