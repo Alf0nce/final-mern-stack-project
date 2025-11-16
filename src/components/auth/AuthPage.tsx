@@ -23,12 +23,30 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's an email confirmation issue
+        if (error.message.toLowerCase().includes('email not confirmed')) {
+          toast({
+            title: "Email Not Confirmed",
+            description: "Please check your email and click the confirmation link before signing in.",
+            variant: "destructive",
+          });
+        } else if (error.message.toLowerCase().includes('invalid login credentials')) {
+          toast({
+            title: "Invalid Credentials",
+            description: "The email or password you entered is incorrect. Please try again or sign up for a new account.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       toast({
         title: "Welcome back!",
@@ -47,6 +65,16 @@ const AuthPage = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!fullName.trim()) {
+      toast({
+        title: "Full name required",
+        description: "Please enter your full name to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -62,15 +90,37 @@ const AuthPage = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.toLowerCase().includes('already registered')) {
+          toast({
+            title: "Account Already Exists",
+            description: "This email is already registered. Please sign in instead.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
 
-      // Note: Member record will be created automatically by a database trigger
-      // when the user confirms their email and gets authenticated
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        toast({
+          title: "Verify Your Email",
+          description: "We've sent a confirmation link to your email. Please check your inbox and click the link to activate your account.",
+        });
+      } else if (data.session) {
+        toast({
+          title: "Account Created!",
+          description: "Welcome! Your account has been created successfully.",
+        });
+      }
       
-      toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account. Your member profile will be created once you confirm your email.",
-      });
+      // Clear form
+      setEmail("");
+      setPassword("");
+      setFullName("");
+      setPhone("");
     } catch (error: any) {
       toast({
         title: "Error",
